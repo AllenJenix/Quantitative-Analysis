@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantitative Analysis - Moving Average</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        svg {
+            width: 80%;
+            height: 400px;
+            border: 1px solid black;
+        }
+        input {
+            margin: 10px;
+            padding: 5px;
+        }
+        button {
+            padding: 7px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>📈 Quantitative Analysis: Moving Average Visualization</h2>
+    <p>Enter stock prices (comma-separated) and choose the moving average window:</p>
+
+    <input type="text" id="stockData" placeholder="100,102,105,107,110,108,106,104,102,101">
+    <input type="number" id="windowSize" min="1" value="3">
+    <button onclick="updateChart()">Calculate</button>
+
+    <svg id="chart"></svg>
+
+    <script>
+        function movingAverage(data, windowSize) {
+            return data.map((val, index) => {
+                if (index < windowSize - 1) return null;
+                const subset = data.slice(index - windowSize + 1, index + 1);
+                return subset.reduce((a, b) => a + b, 0) / windowSize;
+            });
+        }
+
+        function updateChart() {
+            const inputData = document.getElementById("stockData").value.split(',').map(Number);
+            const windowSize = parseInt(document.getElementById("windowSize").value);
+
+            if (inputData.length < windowSize || windowSize <= 0) {
+                alert("Invalid input! Ensure valid numbers and correct window size.");
+                return;
+            }
+
+            const movingAvg = movingAverage(inputData, windowSize);
+
+            // D3.js Visualization
+            const svg = d3.select("#chart"),
+                width = parseInt(svg.style("width")),
+                height = parseInt(svg.style("height")),
+                margin = 40;
+
+            svg.selectAll("*").remove(); // Clear previous chart
+
+            const xScale = d3.scaleLinear()
+                .domain([0, inputData.length - 1])
+                .range([margin, width - margin]);
+
+            const yScale = d3.scaleLinear()
+                .domain([d3.min(inputData), d3.max(inputData)])
+                .range([height - margin, margin]);
+
+            const line = d3.line()
+                .x((_, i) => xScale(i))
+                .y(d => yScale(d));
+
+            svg.append("path")
+                .datum(inputData)
+                .attr("fill", "none")
+                .attr("stroke", "blue")
+                .attr("stroke-width", 2)
+                .attr("d", line);
+
+            svg.append("path")
+                .datum(movingAvg)
+                .attr("fill", "none")
+                .attr("stroke", "red")
+                .attr("stroke-width", 2)
+                .style("stroke-dasharray", "5,5")
+                .attr("d", line);
+
+            svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", 20)
+                .attr("text-anchor", "middle")
+                .attr("font-size", "16px")
+                .text("Stock Price & Moving Average (Red)");
+        }
+    </script>
+</body>
+</html>
